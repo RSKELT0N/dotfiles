@@ -1,8 +1,7 @@
 # dotfiles #
-Dotfiles for vim, emacs, npm, etc.
+Dotfile Inspiration - [tsoding](https://github.com/rexim/dotfiles)
 
-# Dotfile Inspiration #
-[tsoding](https://github.com/rexim/dotfiles)
+Dotfiles for vim, emacs, npm, etc.
 
 # Requirements #
 
