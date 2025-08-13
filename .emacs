@@ -8,6 +8,26 @@
 (load "~/.emacs.rc/org-mode-rc.el")
 (load "~/.emacs.rc/autocommit-rc.el")
 
+(defun dired-open-file-in-new-tab ()
+  "Open the file at point in a new tab."
+  (interactive)
+  (let ((file (dired-get-file-for-visit)))
+    (tab-new)
+    (find-file file)))
+
+(with-eval-after-load 'dired
+  (define-key dired-mode-map (kbd "o") 'dired-open-file-in-new-tab))
+
+;; Turn off whitespace-mode globally
+(global-whitespace-mode -1)
+
+;; Make sure it's not auto-enabled in programming modes
+(remove-hook 'prog-mode-hook #'whitespace-mode)
+(remove-hook 'text-mode-hook #'whitespace-mode)
+
+;; Also avoid showing trailing spaces
+(setq-default show-trailing-whitespace nil)
+
 ;;; Appearance
 (defun rc/get-default-font ()
   (cond
@@ -26,7 +46,7 @@
 ;; (load-theme 'adwaita t)
 
 (eval-after-load 'zenburn
-  (set-face-attribute 'line-number nil :inherit 'default))
+ (set-face-attribute 'line-number nil :inherit 'default))
 
 ;;; ido
 (rc/require 'smex 'ido-completing-read+)
@@ -72,7 +92,6 @@
 (add-to-list 'auto-mode-alist '("Cask" . emacs-lisp-mode))
 
 ;;; uxntal-mode
-
 (rc/require 'uxntal-mode)
 
 ;;; Haskell mode
@@ -133,8 +152,6 @@
   (global-display-line-numbers-mode))
 
 ;;; magit
-;; magit requres this lib, but it is not installed automatically on
-;; Windows.
 (rc/require 'cl-lib)
 (rc/require 'magit)
 
@@ -159,9 +176,12 @@
       (concat dired-omit-files "\\|^\\..+$"))
 (setq-default dired-dwim-target t)
 (setq dired-listing-switches "-alh")
+(add-hook 'dired-mode-hook
+          (lambda ()
+            (local-set-key (kbd "C-c c") 'compile)))
 
 ;;; helm
-(rc/require 'helm 'helm-git-grep 'helm-ls-git)
+(rc/require 'helm 'helm-ls-git)
 
 (setq helm-ff-transformer-show-only-basename nil)
 
@@ -195,7 +215,6 @@
 (add-to-list 'auto-mode-alist '("\\.ant\\'" . nxml-mode))
 
 ;;; tramp
-;;; http://stackoverflow.com/questions/13794433/how-to-disable-autosave-for-tramp-buffers-in-emacs
 (setq tramp-auto-save-directory "/tmp")
 
 ;;; powershell
@@ -211,10 +230,20 @@
 (add-hook 'emacs-lisp-mode-hook 'rc/turn-on-eldoc-mode)
 
 ;;; Company
-(rc/require 'company)
+(rc/require 'company)  ;; removed company-lsp
 (require 'company)
 
 (global-company-mode)
+(add-hook 'c-mode-hook
+          (lambda ()
+            (setq company-backends '(company-capf company-files company-keywords)) ;; replaced company-lsp
+            (setq company-idle-delay 0.1)
+            (setq company-minimum-prefix-length 1)))
+(add-hook 'c++-mode-hook
+          (lambda ()
+            (setq company-backends '(company-capf company-files company-keywords)) ;; replaced company-lsp
+            (setq company-idle-delay 0.1)
+            (setq company-minimum-prefix-length 1)))
 
 (add-hook 'tuareg-mode-hook
           (lambda ()
@@ -228,7 +257,7 @@
 ;;; Tide
 (rc/require 'tide)
 
-(defun rc/turn-on-tide-and-flycheck ()  ;Flycheck is a dependency of tide
+(defun rc/turn-on-tide-and-flycheck ()
   (interactive)
   (tide-setup)
   (flycheck-mode 1))
@@ -293,6 +322,40 @@
  'sml-mode
  )
 
+;;; Projectile for project management
+(rc/require 'projectile 'helm-projectile)
+(projectile-mode +1)
+(define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
+(setq projectile-project-search-path '("~/path/to/projects/"))
+(helm-projectile-on)
+
+;;; Flycheck for syntax checking
+(rc/require 'flycheck)
+(add-hook 'c-mode-hook 'flycheck-mode)
+(add-hook 'c++-mode-hook 'flycheck-mode)
+(setq flycheck-display-errors-delay 0.3)
+
+;;; Clang-format for modern C++ formatting
+(rc/require 'clang-format)
+(add-hook 'c-mode-hook
+          (lambda () (local-set-key (kbd "C-c f") 'clang-format-buffer)))
+(add-hook 'c++-mode-hook
+          (lambda () (local-set-key (kbd "C-c f") 'clang-format-buffer)))
+
+;;; LSP and ccls for C/C++
+(rc/require 'lsp-mode 'lsp-ui 'ccls)
+(add-hook 'c-mode-hook 'lsp)
+(add-hook 'c++-mode-hook 'lsp)
+(setq lsp-keymap-prefix "C-c l")
+(add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration)
+(setq lsp-ui-sideline-enable t)
+(setq lsp-ui-doc-enable t)
+(setq lsp-file-watch-threshold 15000)
+(setq ccls-executable "/usr/local/bin/ccls") ; Adjust path if necessary
+(setq ccls-initialization-options '(:index (:threads 0 :comments 2)
+                                   :cache (:format "binary")
+                                   :completion (:detailedLabel t)))
+
 (load "~/.emacs.shadow/shadow-rc.el" t)
 
 (defun astyle-buffer (&optional justify)
@@ -313,10 +376,6 @@
 
 (require 'compile)
 
-;; pascalik.pas(24,44) Error: Can't evaluate constant expression
-
-compilation-error-regexp-alist-alist
-
 (add-to-list 'compilation-error-regexp-alist
              '("\\([a-zA-Z0-9\\.]+\\)(\\([0-9]+\\)\\(,\\([0-9]+\\)\\)?) \\(Warning:\\)?"
                1 2 (4) (5)))
@@ -332,20 +391,84 @@ compilation-error-regexp-alist-alist
  '(org-cliplink-transport-implementation 'url-el)
  '(org-enforce-todo-dependencies nil)
  '(org-modules
-   '(org-bbdb org-bibtex org-docview org-gnus org-habit org-info org-irc org-mhe org-rmail org-w3m))
+   '(org-bbdb org-bibtex org-docview org-gnus org-habit org-info org-irc
+              org-mhe org-rmail org-w3m))
  '(org-refile-use-outline-path 'file)
- '(package-selected-packages
-   '(rainbow-mode proof-general elpy hindent ag qml-mode racket-mode php-mode go-mode kotlin-mode nginx-mode toml-mode love-minor-mode dockerfile-mode nix-mode purescript-mode markdown-mode jinja2-mode nim-mode csharp-mode rust-mode cmake-mode clojure-mode graphviz-dot-mode lua-mode tuareg glsl-mode yaml-mode d-mode scala-mode move-text nasm-mode editorconfig tide company powershell js2-mode yasnippet helm-ls-git helm-git-grep helm-cmd-t helm multiple-cursors magit haskell-mode paredit ido-completing-read+ smex gruber-darker-theme org-cliplink dash-functional dash))
+ '(package-selected-packages nil)
  '(safe-local-variable-values
-   '((eval progn
-           (auto-revert-mode 1)
-           (rc/autopull-changes)
-           (add-hook 'after-save-hook 'rc/autocommit-changes nil 'make-it-local))))
+   '((eval progn (auto-revert-mode 1) (rc/autopull-changes)
+           (add-hook 'after-save-hook 'rc/autocommit-changes nil
+                     'make-it-local))))
  '(whitespace-style
-   '(face tabs spaces trailing space-before-tab newline indentation empty space-after-tab space-mark tab-mark)))
+   '(face tabs spaces trailing space-before-tab newline indentation empty
+          space-after-tab space-mark tab-mark)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
+
+;; Enable Corfu completion
+(use-package corfu
+  :ensure t
+  :init
+  (global-corfu-mode))
+
+;; Enable LSP for C++
+(use-package lsp-mode
+  :ensure t
+  :hook ((c-mode c++-mode) . lsp)
+  :commands lsp
+  :config
+  (setq lsp-clients-clangd-executable "/opt/homebrew/opt/llvm/bin/clangd"
+        lsp-enable-snippet nil
+        lsp-prefer-flymake nil))
+
+;; Better LSP UI
+(use-package lsp-ui
+  :ensure t
+  :commands lsp-ui-mode
+  :config
+  (setq lsp-ui-doc-enable t
+        lsp-ui-doc-position 'at-point
+        lsp-ui-sideline-enable t))
+
+;; Syntax checking
+(use-package flycheck
+  :ensure t
+  :init (global-flycheck-mode))
+
+;; Force .cpp and .h files to use c++-mode
+(add-to-list 'auto-mode-alist '("\\.cpp\\'" . c++-mode))
+(add-to-list 'auto-mode-alist '("\\.hpp\\'" . c++-mode))
+(add-to-list 'auto-mode-alist '("\\.cc\\'"  . c++-mode))
+(add-to-list 'auto-mode-alist '("\\.h\\'"   . c++-mode))
+
+(defun my-cmake-generate-compile-commands ()
+  "Run cmake in the project root to generate compile_commands.json, then restart LSP."
+  (interactive)
+  (let ((default-directory (projectile-project-root)))
+    (compile "cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .")
+    ;; Delay LSP restart to ensure the compilation finishes
+    (add-hook 'compilation-finish-functions
+              (lambda (buffer status)
+                (when (string-match "finished" status)
+                  (when (fboundp 'lsp)
+                    (lsp-restart-workspace))
+                  ;; Remove this hook after running once
+                  (remove-hook 'compilation-finish-functions
+                               (lambda (buffer status) t)))))))
+
+;; Hook: When opening a C++ file in a CMake project, ensure compile_commands.json exists
+(add-hook 'c++-mode-hook
+          (lambda ()
+            (when (and (projectile-project-p)
+                       (file-exists-p (expand-file-name "CMakeLists.txt" (projectile-project-root)))
+                       (not (file-exists-p (expand-file-name "compile_commands.json" (projectile-project-root)))))
+              (my-cmake-generate-compile-commands))))
+
+(setq lsp-clients-clangd-args
+      '("--compile-commands-dir=."
+        "--header-insertion=never"
+        "--clang-tidy"))
