@@ -1,4 +1,5 @@
 .emacs|symlink|
+.clang-format|symlink|
 .emacs.rc|symlink|
 .emacs.snippets|symlink|
 .emacs.local|symlink|

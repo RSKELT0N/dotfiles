@@ -472,3 +472,73 @@
       '("--compile-commands-dir=."
         "--header-insertion=never"
         "--clang-tidy"))
+
+;; Generate compile_command.json
+
+(require 'json)
+
+(defun cfg/get-compiler-and-std (filename)
+  "Return a cons (COMPILER . STD) based on file extension."
+  (cond
+   ((string-suffix-p ".cpp" filename) '("g++" . "-std=c++17"))
+   ((string-suffix-p ".c" filename) '("gcc" . "-std=c17"))
+   (t '("g++" . "-std=c++17"))))
+
+(defun cfg/read-existing-json ()
+  "Read existing compile_commands.json as a list, or nil if it doesn't exist."
+  (let ((json-file (expand-file-name "compile_commands.json" default-directory)))
+    (when (file-exists-p json-file)
+      (json-parse-string (with-temp-buffer
+                           (insert-file-contents json-file)
+                           (buffer-string))
+                         :object-type 'alist))))
+
+(defun cfg/generate-compile-commands ()
+  "Generate or update compile_commands.json for .c and .cpp files."
+  (interactive)
+  (let* ((existing (cfg/read-existing-json))
+         (existing-files (mapcar (lambda (entry) (alist-get 'file entry)) existing))
+         (sources (directory-files default-directory t "\\.[cC][pP]*[pP]?$"))
+         (new-entries
+          (mapcar (lambda (src)
+                    (let* ((filename (file-name-nondirectory src))
+                           (compiler-std (cfg/get-compiler-and-std filename))
+                           (compiler (car compiler-std))
+                           (std (cdr compiler-std)))
+                      `((directory . ,default-directory)
+                        (command . ,(format "%s %s -c %s" compiler std filename))
+                        (file . ,filename))))
+                  sources))
+         (final-entries
+          (if existing
+              ;; Keep only entries already in existing JSON
+              (cl-remove-if-not
+               (lambda (entry)
+                 (member (alist-get 'file entry) existing-files))
+               new-entries)
+            new-entries)))
+    (with-temp-file (expand-file-name "compile_commands.json" default-directory)
+      (insert (json-encode final-entries)))
+    (message "compile_commands.json generated for %d file(s)" (length final-entries))))
+
+;; Persistent zooming
+
+;; Global variable to store the zoom level
+(defvar cfg/global-text-scale 0
+  "Global text scale applied to all buffers.")
+
+(defun cfg/apply-global-text-scale ()
+  "Apply the global text scale to the current buffer."
+  (text-scale-set cfg/global-text-scale))
+
+;; Automatically apply the global zoom whenever a buffer is opened or switched
+(add-hook 'buffer-list-update-hook #'cfg/apply-global-text-scale)
+
+;; Update the global zoom whenever text-scale-mode changes in any buffer
+(defun cfg/update-global-text-scale ()
+  "Update the global text scale when changed in a buffer."
+  (setq cfg/global-text-scale (or text-scale-mode-amount 0)))
+
+(add-hook 'text-scale-mode-hook #'cfg/update-global-text-scale)
+
+(provide 'cfg)
