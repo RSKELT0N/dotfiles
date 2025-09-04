@@ -1,12 +1,22 @@
-(package-initialize)
+;; -*- lexical-binding: t; -*-
 
+
+
+;;; =============================
+;;; Emacs Configuration
+;;; =============================
+
+(package-initialize)
 (add-to-list 'load-path "~/.emacs.local/")
 
 (load "~/.emacs.rc/rc.el")
-
 (load "~/.emacs.rc/misc-rc.el")
 (load "~/.emacs.rc/org-mode-rc.el")
 (load "~/.emacs.rc/autocommit-rc.el")
+
+;;; =============================
+;;; Basic Functions
+;;; =============================
 
 (defun dired-open-file-in-new-tab ()
   "Open the file at point in a new tab."
@@ -18,404 +28,465 @@
 (with-eval-after-load 'dired
   (define-key dired-mode-map (kbd "o") 'dired-open-file-in-new-tab))
 
-;; Turn off whitespace-mode globally
-(global-whitespace-mode -1)
+;;; =============================
+;;; Whitespace Handling
+;;; =============================
 
-;; Make sure it's not auto-enabled in programming modes
+(global-whitespace-mode -1)
 (remove-hook 'prog-mode-hook #'whitespace-mode)
 (remove-hook 'text-mode-hook #'whitespace-mode)
-
-;; Also avoid showing trailing spaces
 (setq-default show-trailing-whitespace nil)
 
-;;; Appearance
-(defun rc/get-default-font ()
-  (cond
-   ((eq system-type 'windows-nt) "Consolas-13")
-   ((eq system-type 'gnu/linux) "Iosevka-20")))
-
-(add-to-list 'default-frame-alist `(font . ,(rc/get-default-font)))
-
-(tool-bar-mode 0)
-(menu-bar-mode 0)
-(column-number-mode 1)
-(show-paren-mode 1)
-
-(rc/require-theme 'gruber-darker)
-;; (rc/require-theme 'zenburn)
-;; (load-theme 'adwaita t)
-
-(eval-after-load 'zenburn
- (set-face-attribute 'line-number nil :inherit 'default))
-
-;;; ido
-(rc/require 'smex 'ido-completing-read+)
-
-(require 'ido-completing-read+)
-
-(ido-mode 1)
-(ido-everywhere 1)
-(ido-ubiquitous-mode 1)
-
-(global-set-key (kbd "M-x") 'smex)
-(global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
-
-;;; c-mode
-(setq-default c-basic-offset 4
-              c-default-style '((java-mode . "java")
-                                (awk-mode . "awk")
-                                (other . "bsd")))
-
-(add-hook 'c-mode-hook (lambda ()
-                         (interactive)
-                         (c-toggle-comment-style -1)))
-
-;;; Paredit
-(rc/require 'paredit)
-
-(defun rc/turn-on-paredit ()
-  (interactive)
-  (paredit-mode 1))
-
-(add-hook 'emacs-lisp-mode-hook  'rc/turn-on-paredit)
-(add-hook 'clojure-mode-hnook     'rc/turn-on-paredit)
-(add-hook 'lisp-mode-hook        'rc/turn-on-paredit)
-(add-hook 'common-lisp-mode-hook 'rc/turn-on-paredit)
-(add-hook 'scheme-mode-hook      'rc/turn-on-paredit)
-(add-hook 'racket-mode-hook      'rc/turn-on-paredit)
-
-;;; Emacs lisp
-(add-hook 'emacs-lisp-mode-hook
-          '(lambda ()
-             (local-set-key (kbd "C-c C-j")
-                            (quote eval-print-last-sexp))))
-(add-to-list 'auto-mode-alist '("Cask" . emacs-lisp-mode))
-
-;;; uxntal-mode
-(rc/require 'uxntal-mode)
-
-;;; Haskell mode
-(rc/require 'haskell-mode)
-
-(setq haskell-process-type 'cabal-new-repl)
-(setq haskell-process-log t)
-
-(add-hook 'haskell-mode-hook 'haskell-indent-mode)
-(add-hook 'haskell-mode-hook 'interactive-haskell-mode)
-(add-hook 'haskell-mode-hook 'haskell-doc-mode)
-(add-hook 'haskell-mode-hook 'hindent-mode)
-
-(require 'basm-mode)
-
-(require 'fasm-mode)
-(add-to-list 'auto-mode-alist '("\\.asm\\'" . fasm-mode))
-
-(require 'porth-mode)
-
-(require 'noq-mode)
-
-(require 'jai-mode)
-
-(require 'simpc-mode)
-(add-to-list 'auto-mode-alist '("\\.[hc]\\(pp\\)?\\'" . simpc-mode))
-
-(require 'c3-mode)
-
-;;; Whitespace mode
 (defun rc/set-up-whitespace-handling ()
   (interactive)
   (whitespace-mode 1)
   (add-to-list 'write-file-functions 'delete-trailing-whitespace))
 
-(add-hook 'tuareg-mode-hook 'rc/set-up-whitespace-handling)
-(add-hook 'c++-mode-hook 'rc/set-up-whitespace-handling)
-(add-hook 'c-mode-hook 'rc/set-up-whitespace-handling)
-(add-hook 'simpc-mode-hook 'rc/set-up-whitespace-handling)
-(add-hook 'emacs-lisp-mode 'rc/set-up-whitespace-handling)
-(add-hook 'java-mode-hook 'rc/set-up-whitespace-handling)
-(add-hook 'lua-mode-hook 'rc/set-up-whitespace-handling)
-(add-hook 'rust-mode-hook 'rc/set-up-whitespace-handling)
-(add-hook 'scala-mode-hook 'rc/set-up-whitespace-handling)
-(add-hook 'markdown-mode-hook 'rc/set-up-whitespace-handling)
-(add-hook 'haskell-mode-hook 'rc/set-up-whitespace-handling)
-(add-hook 'python-mode-hook 'rc/set-up-whitespace-handling)
-(add-hook 'erlang-mode-hook 'rc/set-up-whitespace-handling)
-(add-hook 'asm-mode-hook 'rc/set-up-whitespace-handling)
-(add-hook 'fasm-mode-hook 'rc/set-up-whitespace-handling)
-(add-hook 'go-mode-hook 'rc/set-up-whitespace-handling)
-(add-hook 'nim-mode-hook 'rc/set-up-whitespace-handling)
-(add-hook 'yaml-mode-hook 'rc/set-up-whitespace-handling)
-(add-hook 'porth-mode-hook 'rc/set-up-whitespace-handling)
+;;; =============================
+;;; Appearance / UI Enhancements
+;;; =============================
 
-;;; display-line-numbers-mode
-(when (version<= "26.0.50" emacs-version)
-  (global-display-line-numbers-mode))
+(defun rc/get-default-font ()
+  "Return Consolas if available, otherwise fallback fonts by OS."
+  (let ((font-name "Consolas"))
+    (if (member font-name (font-family-list))
+        (format "%s-13" font-name)
+      (pcase system-type
+        ('windows-nt "Cascadia Code-13")
+        ('gnu/linux "Iosevka Term-16")
+        ('darwin "SF Mono-14")  ; fixed quote
+        (_ "Monospace-13")))))
 
-;;; magit
-(rc/require 'cl-lib)
-(rc/require 'magit)
+(add-to-list 'default-frame-alist `(font . ,(rc/get-default-font)))
+(add-to-list 'default-frame-alist '(background-color . "#131313")) ; slightly lighter black
+(add-to-list 'default-frame-alist '(foreground-color . "#c6c6c6"))
+(add-to-list 'default-frame-alist '(cursor-color . "#c6c6c6"))
 
-(setq magit-auto-revert-mode nil)
+;;; Minimal UI
+(tool-bar-mode -1)
+(menu-bar-mode -1)
+(scroll-bar-mode -1)
+(setq inhibit-startup-screen t)
+(column-number-mode 1)
+(show-paren-mode 1)
+(global-hl-line-mode 1)
+(set-face-attribute 'hl-line nil :background "#1a1a1a") ; slightly lighter highlight
+(set-face-attribute 'fringe nil :background "#131313") ; match background
 
-(global-set-key (kbd "C-c m s") 'magit-status)
-(global-set-key (kbd "C-c m l") 'magit-log)
+;;; Theme
+(use-package base16-theme
+  :ensure t
+  :config
+  (load-theme 'base16-eighties t)
+  (set-face-background 'default "#131313")
+  (set-face-foreground 'default "#c6c6c6")
+  (set-face-background 'region "#262626")
+  (set-face-background 'mode-line "#1a1a1a")
+  (set-face-background 'mode-line-inactive "#1a1a1a")
+  (set-face-foreground 'mode-line "#c6c6c6")
+  (set-face-foreground 'mode-line-inactive "#888888"))
 
-;;; multiple cursors
-(rc/require 'multiple-cursors)
+;;; Modeline
+(use-package doom-modeline
+  :ensure t
+  :init (doom-modeline-mode 1)
+  :custom
+  ((doom-modeline-height 25)
+   (doom-modeline-bar-width 4)
+   (doom-modeline-buffer-file-name-style 'truncate-upto-project)))
 
-(global-set-key (kbd "C-S-c C-S-c") 'mc/edit-lines)
-(global-set-key (kbd "C->")         'mc/mark-next-like-this)
-(global-set-key (kbd "C-<")         'mc/mark-previous-like-this)
-(global-set-key (kbd "C-c C-<")     'mc/mark-all-like-this)
-(global-set-key (kbd "C-\"")        'mc/skip-to-next-like-this)
-(global-set-key (kbd "C-:")         'mc/skip-to-previous-like-this)
+;;; Icons
+(use-package all-the-icons
+  :ensure t
+  :config
+  (unless (member "all-the-icons" (font-family-list))
+    (all-the-icons-install-fonts t)))
 
-;;; dired
-(require 'dired-x)
-(setq dired-omit-files
-      (concat dired-omit-files "\\|^\\..+$"))
-(setq-default dired-dwim-target t)
-(setq dired-listing-switches "-alh")
-(add-hook 'dired-mode-hook
-          (lambda ()
-            (local-set-key (kbd "C-c c") 'compile)))
+(use-package all-the-icons-dired
+  :ensure t
+  :hook (dired-mode . all-the-icons-dired-mode))
 
-;;; helm
-(rc/require 'helm 'helm-ls-git)
+;;; Line numbers
+(global-display-line-numbers-mode 1)
+(setq display-line-numbers-type 'relative)
+(set-face-attribute 'line-number nil :foreground "#676e95" :background "#131313")
+(set-face-attribute 'line-number-current-line nil :foreground "#c6c6c6" :weight 'bold :background "#131313")
 
-(setq helm-ff-transformer-show-only-basename nil)
+;;; Fringes
+(set-fringe-mode 12)
 
-(global-set-key (kbd "C-c h t") 'helm-cmd-t)
-(global-set-key (kbd "C-c h g g") 'helm-git-grep)
-(global-set-key (kbd "C-c h g l") 'helm-ls-git-ls)
-(global-set-key (kbd "C-c h f") 'helm-find)
-(global-set-key (kbd "C-c h a") 'helm-org-agenda-files-headings)
-(global-set-key (kbd "C-c h r") 'helm-recentf)
+;;; Visual line wrapping
+(global-visual-line-mode 1)
+(setq-default word-wrap t)
 
-;;; yasnippet
-(rc/require 'yasnippet)
+;;; Ligatures
+(use-package ligature
+  :ensure t
+  :config
+  (ligature-set-ligatures 't '("www" "->" "=>" "::" "==" "!=" "<=" ">=" "&&" "||"))
+  (global-ligature-mode t))
 
-(require 'yasnippet)
+;;; Optional: Hide warnings if no GUI
+(when (not (display-graphic-p))
+  (message "Warning: Icons require Emacs GUI to display properly"))
 
-(setq yas/triggers-in-field nil)
-(setq yas-snippet-dirs '("~/.emacs.snippets/"))
+;;; =============================
+;;; Completion & Navigation
+;;; =============================
 
-(yas-global-mode 1)
+(global-set-key (kbd "C-x b") 'helm-mini)
 
-;;; word-wrap
-(defun rc/enable-word-wrap ()
-  (interactive)
-  (toggle-word-wrap 1))
-
-(add-hook 'markdown-mode-hook 'rc/enable-word-wrap)
-
-;;; nxml
-(add-to-list 'auto-mode-alist '("\\.html\\'" . nxml-mode))
-(add-to-list 'auto-mode-alist '("\\.xsd\\'" . nxml-mode))
-(add-to-list 'auto-mode-alist '("\\.ant\\'" . nxml-mode))
-
-;;; tramp
-(setq tramp-auto-save-directory "/tmp")
-
-;;; powershell
-(rc/require 'powershell)
-(add-to-list 'auto-mode-alist '("\\.ps1\\'" . powershell-mode))
-(add-to-list 'auto-mode-alist '("\\.psm1\\'" . powershell-mode))
-
-;;; eldoc mode
-(defun rc/turn-on-eldoc-mode ()
-  (interactive)
-  (eldoc-mode 1))
-
-(add-hook 'emacs-lisp-mode-hook 'rc/turn-on-eldoc-mode)
-
-;;; Company
-(rc/require 'company)  ;; removed company-lsp
-(require 'company)
-
-(global-company-mode)
-(add-hook 'c-mode-hook
-          (lambda ()
-            (setq company-backends '(company-capf company-files company-keywords)) ;; replaced company-lsp
-            (setq company-idle-delay 0.1)
-            (setq company-minimum-prefix-length 1)))
-(add-hook 'c++-mode-hook
-          (lambda ()
-            (setq company-backends '(company-capf company-files company-keywords)) ;; replaced company-lsp
-            (setq company-idle-delay 0.1)
-            (setq company-minimum-prefix-length 1)))
-
-(add-hook 'tuareg-mode-hook
-          (lambda ()
-            (interactive)
-            (company-mode 0)))
-
-;;; Typescript
-(rc/require 'typescript-mode)
-(add-to-list 'auto-mode-alist '("\\.mts\\'" . typescript-mode))
-
-;;; Tide
-(rc/require 'tide)
-
-(defun rc/turn-on-tide-and-flycheck ()
-  (interactive)
-  (tide-setup)
-  (flycheck-mode 1))
-
-(add-hook 'typescript-mode-hook 'rc/turn-on-tide-and-flycheck)
-
-;;; Proof general
-(rc/require 'proof-general)
-(add-hook 'coq-mode-hook
-          '(lambda ()
-             (local-set-key (kbd "C-c C-q C-n")
-                            (quote proof-assert-until-point-interactive))))
-
-;;; LaTeX mode
-(add-hook 'tex-mode-hook
-          (lambda ()
-            (interactive)
-            (add-to-list 'tex-verbatim-environments "code")))
-
-(setq font-latex-fontify-sectioning 'color)
-
-;;; Move Text
-(rc/require 'move-text)
-(global-set-key (kbd "M-p") 'move-text-up)
-(global-set-key (kbd "M-n") 'move-text-down)
-
-;;; Ebisp
-(add-to-list 'auto-mode-alist '("\\.ebi\\'" . lisp-mode))
-
-;;; Packages that don't require configuration
-(rc/require
- 'scala-mode
- 'd-mode
- 'yaml-mode
- 'glsl-mode
- 'tuareg
- 'lua-mode
- 'less-css-mode
- 'graphviz-dot-mode
- 'clojure-mode
- 'cmake-mode
- 'rust-mode
- 'csharp-mode
- 'nim-mode
- 'jinja2-mode
- 'markdown-mode
- 'purescript-mode
- 'nix-mode
- 'dockerfile-mode
- 'toml-mode
- 'nginx-mode
- 'kotlin-mode
- 'go-mode
- 'php-mode
- 'racket-mode
- 'qml-mode
- 'ag
- 'hindent
- 'elpy
- 'typescript-mode
- 'rfc-mode
- 'sml-mode
- )
-
-;;; Projectile for project management
-(rc/require 'projectile 'helm-projectile)
-(projectile-mode +1)
-(define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
-(setq projectile-project-search-path '("~/path/to/projects/"))
-(helm-projectile-on)
-
-;;; Flycheck for syntax checking
-(rc/require 'flycheck)
-(add-hook 'c-mode-hook 'flycheck-mode)
-(add-hook 'c++-mode-hook 'flycheck-mode)
-(setq flycheck-display-errors-delay 0.3)
-
-;;; Clang-format for modern C++ formatting
-(rc/require 'clang-format)
-(add-hook 'c-mode-hook
-          (lambda () (local-set-key (kbd "C-c f") 'clang-format-buffer)))
-(add-hook 'c++-mode-hook
-          (lambda () (local-set-key (kbd "C-c f") 'clang-format-buffer)))
-
-;;; LSP and ccls for C/C++
-(rc/require 'lsp-mode 'lsp-ui 'ccls)
-(add-hook 'c-mode-hook 'lsp)
-(add-hook 'c++-mode-hook 'lsp)
-(setq lsp-keymap-prefix "C-c l")
-(add-hook 'lsp-mode-hook #'lsp-enable-which-key-integration)
-(setq lsp-ui-sideline-enable t)
-(setq lsp-ui-doc-enable t)
-(setq lsp-file-watch-threshold 15000)
-(setq ccls-executable "/usr/local/bin/ccls") ; Adjust path if necessary
-(setq ccls-initialization-options '(:index (:threads 0 :comments 2)
-                                   :cache (:format "binary")
-                                   :completion (:detailedLabel t)))
-
-(load "~/.emacs.shadow/shadow-rc.el" t)
-
-(defun astyle-buffer (&optional justify)
-  (interactive)
-  (let ((saved-line-number (line-number-at-pos)))
-    (shell-command-on-region
-     (point-min)
-     (point-max)
-     "astyle --style=kr"
-     nil
-     t)
-    (goto-line saved-line-number)))
-
-(add-hook 'simpc-mode-hook
-          (lambda ()
-            (interactive)
-            (setq-local fill-paragraph-function 'astyle-buffer)))
-
-(require 'compile)
-
-(add-to-list 'compilation-error-regexp-alist
-             '("\\([a-zA-Z0-9\\.]+\\)(\\([0-9]+\\)\\(,\\([0-9]+\\)\\)?) \\(Warning:\\)?"
-               1 2 (4) (5)))
-
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(display-line-numbers-type 'relative)
- '(org-agenda-dim-blocked-tasks nil)
- '(org-agenda-exporter-settings '((org-agenda-tag-filter-preset (list "+personal"))))
- '(org-cliplink-transport-implementation 'url-el)
- '(org-enforce-todo-dependencies nil)
- '(org-modules
-   '(org-bbdb org-bibtex org-docview org-gnus org-habit org-info org-irc
-              org-mhe org-rmail org-w3m))
- '(org-refile-use-outline-path 'file)
- '(package-selected-packages nil)
- '(safe-local-variable-values
-   '((eval progn (auto-revert-mode 1) (rc/autopull-changes)
-           (add-hook 'after-save-hook 'rc/autocommit-changes nil
-                     'make-it-local))))
- '(whitespace-style
-   '(face tabs spaces trailing space-before-tab newline indentation empty
-          space-after-tab space-mark tab-mark)))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
-
-;; Enable Corfu completion
+;; Inline completion with Corfu
 (use-package corfu
   :ensure t
+  :custom
+  (corfu-cycle t)             ; Cycle through candidates
+  (corfu-auto t)              ; Enable auto completion
+  (corfu-auto-delay 0.1)
+  (corfu-min-width 30)
+  (corfu-echo-delay 0.25)
   :init
   (global-corfu-mode))
 
-;; Enable LSP for C++
+;; Icons in completion menus
+(use-package all-the-icons-completion
+  :ensure t
+  :after corfu
+  :config
+  (all-the-icons-completion-mode))
+
+;; Smex for improved M-x
+(use-package smex
+  :ensure t
+  :bind (("M-x" . smex)
+         ("C-c C-c M-x" . execute-extended-command)))
+
+;; Helm for fuzzy search and navigation
+(use-package helm
+  :ensure t
+  :init (helm-mode 1)
+  :bind (("C-c h f" . helm-find-files)
+         ("C-c h r" . helm-recentf)
+         ("C-c h g g" . helm-git-grep)
+         ("C-c h g l" . helm-ls-git-ls)))
+
+;; Projectile for project management
+(use-package projectile
+  :ensure t
+  :init
+  (projectile-mode +1)
+  :bind-keymap ("C-c p" . projectile-command-map) ;; keep C-c p as prefix
+  :custom
+  (projectile-project-search-path '("~/path/to/projects/"))
+  ;; Open root in Dired by default when switching projects
+  (projectile-switch-project-action 'projectile-dired))
+
+;; Helm Projectile integration
+(use-package helm-projectile
+  :ensure t
+  :after (helm projectile)
+  :config
+  (helm-projectile-on))
+
+;; Optional: automatically disable Flycheck and LSP diagnostics in all buffers of the project
+(defun my/projectile-disable-linters-for-project ()
+  "Disable Flycheck and LSP diagnostics for all buffers in current Projectile project."
+  (dolist (buf (projectile-current-project-buffers))
+    (with-current-buffer buf
+      (when (bound-and-true-p flycheck-mode)
+        (flycheck-mode -1))
+      (when (bound-and-true-p lsp-mode)
+        (setq-local lsp-diagnostics-provider :none)))))
+
+(advice-add 'projectile-switch-project :after #'my/projectile-disable-linters-for-project)
+
+;; Keep standard Projectile commands functional under C-c p
+(with-eval-after-load 'projectile
+  (define-key projectile-command-map (kbd "f") #'projectile-find-file)
+  (define-key projectile-command-map (kbd "s s") #'projectile-ripgrep)
+  (define-key projectile-command-map (kbd "g") #'projectile-grep)
+  (define-key projectile-command-map (kbd "b") #'projectile-switch-to-buffer))
+
+;; Avy for quick jumping
+(use-package avy
+  :ensure t
+  :bind ("C-:" . avy-goto-char-timer)
+         ("C-'" . avy-goto-word-1)
+         ("M-g f" . avy-goto-line))
+
+;;; =============================
+;;; Programming / Language Mode Enhancements
+;;; =============================
+
+;; -----------------------------
+;; LSP and Completion
+;; -----------------------------
+(use-package lsp-mode
+  :ensure t
+  :commands lsp
+  :init
+  (setq lsp-keymap-prefix "C-c l"
+        lsp-enable-snippet nil
+        lsp-prefer-flymake nil
+        lsp-file-watch-threshold 15000)
+  :hook ((c-mode c++-mode python-mode haskell-mode typescript-mode) . lsp))
+
+(use-package lsp-ui
+  :ensure t
+  :commands lsp-ui-mode
+  :config
+  (setq lsp-ui-doc-enable t
+        lsp-ui-doc-position 'at-point
+        lsp-ui-sideline-enable t
+        lsp-ui-sideline-show-symbol t
+        lsp-ui-sideline-show-hover t
+        lsp-ui-sideline-show-diagnostics t
+        lsp-ui-sideline-delay 0.2))
+
+;; -----------------------------
+;; Completion
+;; -----------------------------
+(use-package corfu
+  :ensure t
+  :init (global-corfu-mode)
+  :custom
+  (corfu-cycle t)
+  (corfu-auto t)
+  (corfu-auto-delay 0.1)
+  (corfu-min-width 30)
+  (corfu-echo-delay 0.25))
+
+(use-package company
+  :ensure t
+  :hook ((c-mode c++-mode python-mode) . company-mode)
+  :custom
+  (company-idle-delay 0.1)
+  (company-minimum-prefix-length 1)
+  (company-show-numbers t))
+
+;; Icons in completions
+(use-package all-the-icons-completion
+  :ensure t
+  :after corfu
+  :config
+  (all-the-icons-completion-mode))
+
+;; -----------------------------
+;; Syntax Checking
+;; -----------------------------
+(use-package flycheck
+  :ensure t
+  :init (global-flycheck-mode)
+  :custom
+  (flycheck-display-errors-delay 0.3))
+
+;; -----------------------------
+;; Autoformatting on save
+;; -----------------------------
+(defun rc/clang-format-buffer ()
+  "Format current buffer with clang-format."
+  (interactive)
+  (when (derived-mode-p 'c-mode 'c++-mode)
+    (clang-format-buffer)))
+
+(defun rc/python-black-buffer ()
+  "Format Python buffer with black."
+  (interactive)
+  (when (eq major-mode 'python-mode)
+    (call-process "black" nil "*Black Output*" t buffer-file-name)))
+
+(add-hook 'before-save-hook 'rc/clang-format-buffer)
+(add-hook 'before-save-hook 'rc/python-black-buffer)
+
+;; -----------------------------
+;; Paredit & Eldoc for Lisp
+;; -----------------------------
+(use-package paredit
+  :ensure t
+  :hook ((emacs-lisp-mode lisp-mode clojure-mode scheme-mode) . paredit-mode))
+
+(add-hook 'emacs-lisp-mode-hook 'eldoc-mode)
+(add-hook 'clojure-mode-hook 'eldoc-mode)
+(add-hook 'lisp-mode-hook 'eldoc-mode)
+
+;; -----------------------------
+;; Haskell enhancements
+;; -----------------------------
+(use-package hindent
+  :ensure t
+  :hook (haskell-mode . hindent-mode))
+
+(add-hook 'haskell-mode-hook 'interactive-haskell-mode)
+(add-hook 'haskell-mode-hook 'haskell-doc-mode)
+(add-hook 'haskell-mode-hook 'haskell-indent-mode)
+
+;; -----------------------------
+;; General Programming Enhancements
+;; -----------------------------
+;; Display line numbers
+(when (version<= "26.0.50" emacs-version)
+  (global-display-line-numbers-mode))
+
+;; Highlight current line
+(global-hl-line-mode 1)
+
+;;; =============================
+;;; C++ Project Full Features Setup
+;;; =============================
+
+;; Ensure LSP is active for C/C++
+(add-hook 'c-mode-hook #'lsp)
+(add-hook 'c++-mode-hook #'lsp)
+
+;; Use clangd as the LSP server
+(setq lsp-clients-clangd-executable "/usr/local/bin/clangd") ;; adjust if needed
+(setq lsp-clients-clangd-args
+      '("--compile-commands-dir=."
+        "--header-insertion=never"
+        "--clang-tidy"))
+
+;; Auto-generate compile_commands.json for CMake projects
+(defun rc/generate-compile-commands ()
+  "Generate compile_commands.json if missing and restart LSP."
+  (let ((root (projectile-project-root)))
+    (when (and root
+               (file-exists-p (expand-file-name "CMakeLists.txt" root))
+               (not (file-exists-p (expand-file-name "compile_commands.json" root))))
+      (compile "cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .")
+      ;; Restart LSP after compilation finishes
+      (add-hook 'compilation-finish-functions
+                (lambda (buffer status)
+                  (when (string-match "finished" status)
+                    (when (fboundp 'lsp)
+                      (lsp-restart-workspace))
+                    (remove-hook 'compilation-finish-functions
+                                 #'rc/generate-compile-commands)))))))
+
+(add-hook 'c-mode-hook #'rc/generate-compile-commands)
+(add-hook 'c++-mode-hook #'rc/generate-compile-commands)
+
+;; Autoformat C/C++ on save
+(defun rc/clang-format-buffer ()
+  "Run clang-format on current buffer if C/C++."
+  (interactive)
+  (when (derived-mode-p 'c-mode 'c++-mode)
+    (clang-format-buffer)))
+(add-hook 'before-save-hook 'rc/clang-format-buffer)
+
+;; Flycheck for real-time diagnostics
+(add-hook 'c-mode-hook 'flycheck-mode)
+(add-hook 'c++-mode-hook 'flycheck-mode)
+
+;; Company completion for C/C++
+(add-hook 'c-mode-hook
+          (lambda ()
+            (setq-local company-backends '(company-capf company-files company-keywords))
+            (company-mode 1)))
+(add-hook 'c++-mode-hook
+          (lambda ()
+            (setq-local company-backends '(company-capf company-files company-keywords))
+            (company-mode 1)))
+
+;; Optional: Corfu inline completion
+(add-hook 'c-mode-hook #'corfu-mode)
+(add-hook 'c++-mode-hook #'corfu-mode)
+
+;; Navigation keys
+(with-eval-after-load 'lsp-mode
+  (define-key lsp-mode-map (kbd "M-.") 'lsp-find-definition)
+  (define-key lsp-mode-map (kbd "M-,") 'lsp-find-references)
+  (define-key lsp-mode-map (kbd "C-c l r") 'lsp-rename)
+  (define-key lsp-mode-map (kbd "C-c l f") 'lsp-format-buffer))
+
+;; Enable line numbers and highlight current line
+(when (version<= "26.0.50" emacs-version)
+  (display-line-numbers-mode 1))
+(global-hl-line-mode 1)
+
+(provide 'cpp-full-features)
+
+;;; =============================
+;;; Org Mode & Productivity Enhancements
+;;; =============================
+
+;; -----------------------------
+;; Core Org Mode
+;; -----------------------------
+(use-package org
+  :ensure t
+  :config
+  ;; Visual improvements
+  (setq org-fontify-whole-heading-line t
+        org-hide-leading-stars t
+        org-startup-indented t
+        org-pretty-entities t
+        org-agenda-start-with-log-mode t
+        org-log-done 'time
+        org-log-into-drawer t))
+
+;; -----------------------------
+;; Org Bullets
+;; -----------------------------
+(use-package org-bullets
+  :ensure t
+  :hook (org-mode . org-bullets-mode))
+
+;; -----------------------------
+;; Org Modern: Visual Theme & Icons
+;; -----------------------------
+(use-package org-modern
+  :ensure t
+  :hook (org-mode . org-modern-mode)
+  :custom
+  (org-modern-hide-stars nil)
+  (org-modern-todo nil)
+  (org-modern-block-fringe nil)
+  (org-modern-table nil))
+
+;; -----------------------------
+;; Org Agenda & Capture Templates
+;; -----------------------------
+(setq org-agenda-files '("~/org/"))
+(setq org-capture-templates
+      '(("t" "Todo" entry (file+headline "~/org/todo.org" "Tasks")
+         "* TODO %?\n  %i\n  %a")
+        ("n" "Note" entry (file+headline "~/org/notes.org" "Notes")
+         "* %?\n  %i\n  %a")))
+
+(global-set-key (kbd "C-c a") 'org-agenda)
+(global-set-key (kbd "C-c c") 'org-capture)
+
+;; -----------------------------
+;; Org Refiling
+;; -----------------------------
+(setq org-refile-use-outline-path 'file
+      org-outline-path-complete-in-steps nil
+      org-refile-targets '((org-agenda-files :maxlevel . 3)))
+
+;; -----------------------------
+;; Org-Roam: Knowledge Management
+;; -----------------------------
+(use-package org-roam
+  :ensure t
+  :init (setq org-roam-v2-ack t)
+  :custom
+  (org-roam-directory (expand-file-name "~/org/roam/"))
+  :bind (("C-c n l" . org-roam-buffer-toggle)
+         ("C-c n f" . org-roam-node-find)
+         ("C-c n i" . org-roam-node-insert))
+  :config
+  ;; Ensure the directory exists to prevent startup errors
+  (unless (file-exists-p org-roam-directory)
+    (make-directory org-roam-directory t))
+  (org-roam-db-autosync-mode 1))
+
+(provide 'org-productivity)
+
+;;; =============================
+;;; LSP / Completion / Syntax
+;;; =============================
+
+;; LSP
 (use-package lsp-mode
   :ensure t
   :hook ((c-mode c++-mode) . lsp)
@@ -425,7 +496,6 @@
         lsp-enable-snippet nil
         lsp-prefer-flymake nil))
 
-;; Better LSP UI
 (use-package lsp-ui
   :ensure t
   :commands lsp-ui-mode
@@ -434,111 +504,76 @@
         lsp-ui-doc-position 'at-point
         lsp-ui-sideline-enable t))
 
-;; Syntax checking
+;; Flycheck
 (use-package flycheck
   :ensure t
   :init (global-flycheck-mode))
 
-;; Force .cpp and .h files to use c++-mode
-(add-to-list 'auto-mode-alist '("\\.cpp\\'" . c++-mode))
-(add-to-list 'auto-mode-alist '("\\.hpp\\'" . c++-mode))
-(add-to-list 'auto-mode-alist '("\\.cc\\'"  . c++-mode))
-(add-to-list 'auto-mode-alist '("\\.h\\'"   . c++-mode))
+;;; =============================
+;;; Custom Features & Extras
+;;; =============================
 
-(defun my-cmake-generate-compile-commands ()
-  "Run cmake in the project root to generate compile_commands.json, then restart LSP."
-  (interactive)
-  (let ((default-directory (projectile-project-root)))
-    (compile "cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .")
-    ;; Delay LSP restart to ensure the compilation finishes
-    (add-hook 'compilation-finish-functions
-              (lambda (buffer status)
-                (when (string-match "finished" status)
-                  (when (fboundp 'lsp)
-                    (lsp-restart-workspace))
-                  ;; Remove this hook after running once
-                  (remove-hook 'compilation-finish-functions
-                               (lambda (buffer status) t)))))))
-
-;; Hook: When opening a C++ file in a CMake project, ensure compile_commands.json exists
-(add-hook 'c++-mode-hook
-          (lambda ()
-            (when (and (projectile-project-p)
-                       (file-exists-p (expand-file-name "CMakeLists.txt" (projectile-project-root)))
-                       (not (file-exists-p (expand-file-name "compile_commands.json" (projectile-project-root)))))
-              (my-cmake-generate-compile-commands))))
-
-(setq lsp-clients-clangd-args
-      '("--compile-commands-dir=."
-        "--header-insertion=never"
-        "--clang-tidy"))
-
-;; Generate compile_command.json
-
-(require 'json)
-
-(defun cfg/get-compiler-and-std (filename)
-  "Return a cons (COMPILER . STD) based on file extension."
-  (cond
-   ((string-suffix-p ".cpp" filename) '("g++" . "-std=c++17"))
-   ((string-suffix-p ".c" filename) '("gcc" . "-std=c17"))
-   (t '("g++" . "-std=c++17"))))
-
-(defun cfg/read-existing-json ()
-  "Read existing compile_commands.json as a list, or nil if it doesn't exist."
-  (let ((json-file (expand-file-name "compile_commands.json" default-directory)))
-    (when (file-exists-p json-file)
-      (json-parse-string (with-temp-buffer
-                           (insert-file-contents json-file)
-                           (buffer-string))
-                         :object-type 'alist))))
-
-(defun cfg/generate-compile-commands ()
-  "Generate or update compile_commands.json for .c and .cpp files."
-  (interactive)
-  (let* ((existing (cfg/read-existing-json))
-         (existing-files (mapcar (lambda (entry) (alist-get 'file entry)) existing))
-         (sources (directory-files default-directory t "\\.[cC][pP]*[pP]?$"))
-         (new-entries
-          (mapcar (lambda (src)
-                    (let* ((filename (file-name-nondirectory src))
-                           (compiler-std (cfg/get-compiler-and-std filename))
-                           (compiler (car compiler-std))
-                           (std (cdr compiler-std)))
-                      `((directory . ,default-directory)
-                        (command . ,(format "%s %s -c %s" compiler std filename))
-                        (file . ,filename))))
-                  sources))
-         (final-entries
-          (if existing
-              ;; Keep only entries already in existing JSON
-              (cl-remove-if-not
-               (lambda (entry)
-                 (member (alist-get 'file entry) existing-files))
-               new-entries)
-            new-entries)))
-    (with-temp-file (expand-file-name "compile_commands.json" default-directory)
-      (insert (json-encode final-entries)))
-    (message "compile_commands.json generated for %d file(s)" (length final-entries))))
-
-;; Persistent zooming
-
-;; Global variable to store the zoom level
-(defvar cfg/global-text-scale 0
-  "Global text scale applied to all buffers.")
-
-(defun cfg/apply-global-text-scale ()
-  "Apply the global text scale to the current buffer."
-  (text-scale-set cfg/global-text-scale))
-
-;; Automatically apply the global zoom whenever a buffer is opened or switched
+;; Global text scale
+(defvar cfg/global-text-scale 0 "Global text scale applied to all buffers.")
+(defun cfg/apply-global-text-scale () (text-scale-set cfg/global-text-scale))
 (add-hook 'buffer-list-update-hook #'cfg/apply-global-text-scale)
-
-;; Update the global zoom whenever text-scale-mode changes in any buffer
 (defun cfg/update-global-text-scale ()
-  "Update the global text scale when changed in a buffer."
   (setq cfg/global-text-scale (or text-scale-mode-amount 0)))
-
 (add-hook 'text-scale-mode-hook #'cfg/update-global-text-scale)
 
 (provide 'cfg)
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages
+   '(ag all-the-icons-completion all-the-icons-dired avy base16-theme
+        catppuccin-theme ccls clang-format clojure-mode cmake-mode
+        corfu d-mode dash-functional dockerfile-mode doom-modeline
+        doom-themes elpy glsl-mode go-mode graphviz-dot-mode
+        gruber-darker-theme gruvbox-theme haskell-mode helm-ls-git
+        helm-projectile helm-rg hindent ido-completing-read+
+        jinja2-mode kotlin-mode ligature lsp-ui lua-mode magit
+        modus-themes move-text multiple-cursors nginx-mode nim-mode
+        nix-mode org-bullets org-cliplink org-modern org-roam paredit
+        php-mode powershell proof-general purescript-mode qml-mode
+        racket-mode rfc-mode rust-mode scala-mode smex sml-mode tide
+        toml-mode tuareg typescript-mode uxntal-mode yaml-mode)))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
+
+(defun disable-flycheck-for-current-project-once ()
+  "Disable Flycheck automatically for this buffer in the current project.
+Runs only once per buffer to avoid re-enabling issues."
+  (interactive)
+  (when (and (projectile-project-p)
+             (bound-and-true-p flycheck-mode)
+             (not (bound-and-true-p flycheck-disabled-for-project)))
+    ;; Mark this buffer as having Flycheck disabled
+    (setq-local flycheck-disabled-for-project t)
+    ;; Disable automatic checking
+    (setq-local flycheck-check-syntax-automatically nil)
+    ;; Clear any existing overlays
+    (flycheck-clear)
+    (message "Flycheck disabled for this buffer in this project")))
+
+(defun enable-flycheck-for-current-project ()
+  "Re-enable Flycheck for the current buffer."
+  (interactive)
+  (when (projectile-project-p)
+    ;; Re-enable automatic checking
+    (setq-local flycheck-check-syntax-automatically
+                '(save mode-enabled idle-change new-line))
+    (flycheck-buffer)
+    (setq-local flycheck-disabled-for-project nil)
+    (message "Flycheck enabled for this buffer in this project")))
+
+;; Hook the “disable once” function safely
+(add-hook 'prog-mode-hook 'disable-flycheck-for-current-project-once)
+
+
