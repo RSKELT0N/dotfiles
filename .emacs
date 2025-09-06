@@ -1,7 +1,5 @@
 ;; -*- lexical-binding: t; -*-
 
-
-
 ;;; =============================
 ;;; Emacs Configuration
 ;;; =============================
@@ -54,11 +52,11 @@
       (pcase system-type
         ('windows-nt "Cascadia Code-13")
         ('gnu/linux "Iosevka Term-16")
-        ('darwin "SF Mono-14")  ; fixed quote
+        ('darwin "SF Mono-14")
         (_ "Monospace-13")))))
 
 (add-to-list 'default-frame-alist `(font . ,(rc/get-default-font)))
-(add-to-list 'default-frame-alist '(background-color . "#131313")) ; slightly lighter black
+(add-to-list 'default-frame-alist '(background-color . "#131313"))
 (add-to-list 'default-frame-alist '(foreground-color . "#c6c6c6"))
 (add-to-list 'default-frame-alist '(cursor-color . "#c6c6c6"))
 
@@ -70,21 +68,46 @@
 (column-number-mode 1)
 (show-paren-mode 1)
 (global-hl-line-mode 1)
-(set-face-attribute 'hl-line nil :background "#1a1a1a") ; slightly lighter highlight
-(set-face-attribute 'fringe nil :background "#131313") ; match background
+(set-face-attribute 'hl-line nil :background "#1a1a1a")
+(set-face-attribute 'fringe nil :background "#131313")
 
-;;; Theme
+;;; =============================
+;;; VS Code-like Theme
+;;; =============================
 (use-package base16-theme
   :ensure t
   :config
-  (load-theme 'base16-eighties t)
-  (set-face-background 'default "#131313")
-  (set-face-foreground 'default "#c6c6c6")
-  (set-face-background 'region "#262626")
-  (set-face-background 'mode-line "#1a1a1a")
-  (set-face-background 'mode-line-inactive "#1a1a1a")
-  (set-face-foreground 'mode-line "#c6c6c6")
-  (set-face-foreground 'mode-line-inactive "#888888"))
+  (load-theme 'base16-eighties t) ;; choose a dark base16 theme
+
+  ;; Editor background and foreground
+  (set-face-background 'default "#1e1e1e")  ;; VS Code dark background
+  (set-face-foreground 'default "#d4d4d4")  ;; VS Code light text
+
+  ;; Selection
+  (set-face-background 'region "#264f78")   ;; VS Code selection blue
+
+  ;; Line highlighting
+  (set-face-background 'hl-line "#2a2a2a")  ;; subtle highlight for current line
+
+  ;; Mode-line
+  (set-face-background 'mode-line "#0a52d0")          ;; VS Code blue active
+  (set-face-foreground 'mode-line "#ffffff")          ;; white text
+  (set-face-attribute 'mode-line nil :weight 'bold)
+  (set-face-background 'mode-line-inactive "#3c3c3c") ;; dark gray inactive
+  (set-face-foreground 'mode-line-inactive "#888888")
+
+  ;; Fringe
+  (set-face-background 'fringe "#1e1e1e")  ;; match editor background
+
+  ;; Window divider
+  (set-face-background 'window-divider "#333333")
+  (set-face-background 'window-divider-first-pixel "#333333")
+  (set-face-background 'window-divider-last-pixel "#333333")
+
+  ;; Line numbers
+  (set-face-foreground 'line-number "#858585")
+  (set-face-foreground 'line-number-current-line "#d4d4d4")
+  (set-face-background 'line-number-current-line "#1e1e1e"))
 
 ;;; Modeline
 (use-package doom-modeline
@@ -140,20 +163,13 @@
 (use-package corfu
   :ensure t
   :custom
-  (corfu-cycle t)             ; Cycle through candidates
-  (corfu-auto t)              ; Enable auto completion
+  (corfu-cycle t)
+  (corfu-auto t)
   (corfu-auto-delay 0.1)
   (corfu-min-width 30)
   (corfu-echo-delay 0.25)
   :init
   (global-corfu-mode))
-
-;; Icons in completion menus
-(use-package all-the-icons-completion
-  :ensure t
-  :after corfu
-  :config
-  (all-the-icons-completion-mode))
 
 ;; Smex for improved M-x
 (use-package smex
@@ -175,10 +191,9 @@
   :ensure t
   :init
   (projectile-mode +1)
-  :bind-keymap ("C-c p" . projectile-command-map) ;; keep C-c p as prefix
+  :bind-keymap ("C-c p" . projectile-command-map)
   :custom
   (projectile-project-search-path '("~/path/to/projects/"))
-  ;; Open root in Dired by default when switching projects
   (projectile-switch-project-action 'projectile-dired))
 
 ;; Helm Projectile integration
@@ -188,97 +203,125 @@
   :config
   (helm-projectile-on))
 
-;; Optional: automatically disable Flycheck and LSP diagnostics in all buffers of the project
-(defun my/projectile-disable-linters-for-project ()
-  "Disable Flycheck and LSP diagnostics for all buffers in current Projectile project."
-  (dolist (buf (projectile-current-project-buffers))
-    (with-current-buffer buf
-      (when (bound-and-true-p flycheck-mode)
-        (flycheck-mode -1))
-      (when (bound-and-true-p lsp-mode)
-        (setq-local lsp-diagnostics-provider :none)))))
-
-(advice-add 'projectile-switch-project :after #'my/projectile-disable-linters-for-project)
-
-;; Keep standard Projectile commands functional under C-c p
-(with-eval-after-load 'projectile
-  (define-key projectile-command-map (kbd "f") #'projectile-find-file)
-  (define-key projectile-command-map (kbd "s s") #'projectile-ripgrep)
-  (define-key projectile-command-map (kbd "g") #'projectile-grep)
-  (define-key projectile-command-map (kbd "b") #'projectile-switch-to-buffer))
-
 ;; Avy for quick jumping
 (use-package avy
   :ensure t
-  :bind ("C-:" . avy-goto-char-timer)
+  :bind (("C-:" . avy-goto-char-timer)
          ("C-'" . avy-goto-word-1)
-         ("M-g f" . avy-goto-line))
+         ("M-g f" . avy-goto-line)))
+
+;;; =============================
+;;; Neotree: Project File Tree
+;;; =============================
+
+(use-package neotree
+  :ensure t
+  :after projectile
+  :bind (("C-x n t" . neotree-toggle)
+         ("C-x n f" . neotree-find))
+  :config
+  (setq neo-smart-open t)
+  (setq neo-theme (if (display-graphic-p) 'icons 'arrow))
+  (defun my/projectile-switch-to-neotree ()
+    "Open Neotree at the Projectile project root after switching projects."
+    (when (projectile-project-p)
+      (let ((project-root (projectile-project-root)))
+        (neotree-dir project-root)
+        (neotree-find))))
+  (advice-add 'projectile-switch-project :after #'my/projectile-switch-to-neotree)
+  (setq neo-window-width 50)
+  (setq neo-window-allow-other-window nil)
+  (setq neo-window-fixed-size 'auto)
+  (setq neo-truncate-names t)
+  (add-hook 'neo-after-create-hook
+            (lambda (_)
+              (setq truncate-lines t)
+              (text-scale-set 0)
+              (setq-local text-scale-mode-amount 0)
+              (setq-local text-scale-mode-step 0)
+              (text-scale-mode 1))))
+
+(defun my/neotree-zoom-in ()
+  "Zoom in NeoTree buffer only."
+  (interactive)
+  (when (eq major-mode 'neotree-mode)
+    (text-scale-increase 1)))
+
+(defun my/neotree-zoom-out ()
+  "Zoom out NeoTree buffer only."
+  (interactive)
+  (when (eq major-mode 'neotree-mode)
+    (text-scale-decrease 1)))
+
+(with-eval-after-load 'neotree
+  (define-key neotree-mode-map (kbd "C-+") 'my/neotree-zoom-in)
+  (define-key neotree-mode-map (kbd "C--") 'my/neotree-zoom-out)
+  (defun my/neotree-jump-to-folder ()
+    "Change Neotree root to the folder under cursor."
+    (interactive)
+    (let* ((node (neo-buffer--get-filename-current-line))
+           (dir (cond
+                 ((null node) (user-error "No node under cursor"))
+                 ((file-directory-p node) node)
+                 (t (file-name-directory node)))))
+      (let ((neo-buf (get-buffer neo-buffer-name)))
+        (when neo-buf (kill-buffer neo-buf)))
+      (neotree-dir dir)
+      (neotree-show)
+      (message "Neotree root changed to: %s" dir)))
+  (define-key neotree-mode-map (kbd "M-RET") #'my/neotree-jump-to-folder))
+
+    ;; Optional: automatically expand NeoTree on project switch
+  (defun my/projectile-switch-to-neotree ()
+    "Open NeoTree at Projectile project root after switching projects."
+    (when (projectile-project-p)
+      (neotree-dir (projectile-project-root))
+      (neotree-show)))
+  (advice-add 'projectile-switch-project :after #'my/projectile-switch-to-neotree)
+
+  ;; -----------------------------
+  ;; Keybindings inside NeoTree window
+  ;; -----------------------------
+  (with-eval-after-load 'neotree
+    (define-key neotree-mode-map (kbd "RET") 'neotree-enter)          ;; open file/folder
+    (define-key neotree-mode-map (kbd "o") 'neotree-enter)            ;; alternate open
+    (define-key neotree-mode-map (kbd "C") 'neotree-create-node)      ;; create file or dir
+    (define-key neotree-mode-map (kbd "R") 'neotree-rename-node)      ;; rename
+    (define-key neotree-mode-map (kbd "D") 'neotree-delete-node)      ;; delete
+    (define-key neotree-mode-map (kbd "g") 'neotree-refresh)          ;; refresh
+    (define-key neotree-mode-map (kbd "TAB") 'neotree-enter)          ;; open folder
+    (define-key neotree-mode-map (kbd "SPC") 'neotree-quick-look)     ;; preview file
+    (define-key neotree-mode-map (kbd "q") 'neotree-hide)             ;; close NeoTree
+    (define-key neotree-mode-map (kbd "C-c C-c") 'neotree-copy-node)  ;; copy
+    (define-key neotree-mode-map (kbd "C-c C-v") 'neotree-paste-node) ;; paste
+    (define-key neotree-mode-map (kbd "C-c C-m") 'neotree-move-node)  ;; move
+    (define-key neotree-mode-map (kbd "m") 'neotree-toggle-mark))     ;; mark/unmark file
+
+  ;; -----------------------------
+  ;; Hide hidden files by default, with toggle
+  ;; -----------------------------
+  (defun my-neotree-toggle-hidden-files ()
+    "Toggle visibility of hidden files in NeoTree and fully refresh the root."
+    (interactive)
+    (setq neo-show-hidden-files (not neo-show-hidden-files))
+    ;; Remember the NeoTree root
+    (let ((root (or (bound-and-true-p neo-buffer--start-node)
+                    default-directory)))
+      ;; Kill the existing NeoTree buffer
+      (let ((buf (get-buffer neo-buffer-name)))
+        (when buf (kill-buffer buf)))
+      ;; Reopen NeoTree at the same root
+      (neotree-dir root)))
+
+  ;; Hide dotfiles by default
+  (setq neo-show-hidden-files nil)
+
+  (with-eval-after-load 'neotree
+    (define-key neotree-mode-map (kbd ".") #'my-neotree-toggle-hidden-files))
 
 ;;; =============================
 ;;; Programming / Language Mode Enhancements
 ;;; =============================
-
-;; -----------------------------
-;; LSP and Completion
-;; -----------------------------
-(use-package lsp-mode
-  :ensure t
-  :commands lsp
-  :init
-  (setq lsp-keymap-prefix "C-c l"
-        lsp-enable-snippet nil
-        lsp-prefer-flymake nil
-        lsp-file-watch-threshold 15000)
-  :hook ((c-mode c++-mode python-mode haskell-mode typescript-mode) . lsp))
-
-(use-package lsp-ui
-  :ensure t
-  :commands lsp-ui-mode
-  :config
-  (setq lsp-ui-doc-enable t
-        lsp-ui-doc-position 'at-point
-        lsp-ui-sideline-enable t
-        lsp-ui-sideline-show-symbol t
-        lsp-ui-sideline-show-hover t
-        lsp-ui-sideline-show-diagnostics t
-        lsp-ui-sideline-delay 0.2))
-
-;; -----------------------------
-;; Completion
-;; -----------------------------
-(use-package corfu
-  :ensure t
-  :init (global-corfu-mode)
-  :custom
-  (corfu-cycle t)
-  (corfu-auto t)
-  (corfu-auto-delay 0.1)
-  (corfu-min-width 30)
-  (corfu-echo-delay 0.25))
-
-(use-package company
-  :ensure t
-  :hook ((c-mode c++-mode python-mode) . company-mode)
-  :custom
-  (company-idle-delay 0.1)
-  (company-minimum-prefix-length 1)
-  (company-show-numbers t))
-
-;; Icons in completions
-(use-package all-the-icons-completion
-  :ensure t
-  :after corfu
-  :config
-  (all-the-icons-completion-mode))
-
-;; -----------------------------
-;; Syntax Checking
-;; -----------------------------
-(use-package flycheck
-  :ensure t
-  :init (global-flycheck-mode)
-  :custom
-  (flycheck-display-errors-delay 0.3))
 
 ;; -----------------------------
 ;; Autoformatting on save
@@ -330,92 +373,48 @@
 ;; Highlight current line
 (global-hl-line-mode 1)
 
-;;; =============================
-;;; C++ Project Full Features Setup
-;;; =============================
+;; -----------------------------
+;; Auto-completion & Snippets
+;; -----------------------------
+(electric-pair-mode 1)
 
-;; Ensure LSP is active for C/C++
-(add-hook 'c-mode-hook #'lsp)
-(add-hook 'c++-mode-hook #'lsp)
+(use-package yasnippet
+  :ensure t
+  :hook (prog-mode . yas-minor-mode)
+  :config
+  (yas-reload-all))
 
-;; Use clangd as the LSP server
-(setq lsp-clients-clangd-executable "/usr/local/bin/clangd") ;; adjust if needed
-(setq lsp-clients-clangd-args
-      '("--compile-commands-dir=."
-        "--header-insertion=never"
-        "--clang-tidy"))
+;; -----------------------------
+;; Indentation: 4 spaces
+;; -----------------------------
+(setq-default indent-tabs-mode nil)
+(setq-default tab-width 4)
+(setq-default standard-indent 4)
 
-;; Auto-generate compile_commands.json for CMake projects
-(defun rc/generate-compile-commands ()
-  "Generate compile_commands.json if missing and restart LSP."
-  (let ((root (projectile-project-root)))
-    (when (and root
-               (file-exists-p (expand-file-name "CMakeLists.txt" root))
-               (not (file-exists-p (expand-file-name "compile_commands.json" root))))
-      (compile "cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .")
-      ;; Restart LSP after compilation finishes
-      (add-hook 'compilation-finish-functions
-                (lambda (buffer status)
-                  (when (string-match "finished" status)
-                    (when (fboundp 'lsp)
-                      (lsp-restart-workspace))
-                    (remove-hook 'compilation-finish-functions
-                                 #'rc/generate-compile-commands)))))))
+(defun rc/setup-prog-indent ()
+  "Set up 4-space indentation for programming modes."
+  (setq-local c-basic-offset 4)
+  (setq-local python-indent-offset 4)
+  (setq-local haskell-indentation-layout-offset 4)
+  (setq-local haskell-indentation-starter-offset 4)
+  (setq-local haskell-indentation-left-offset 4)
+  (setq-local haskell-indentation-where-pre-offset 4)
+  (setq-local lisp-indent-offset 4)
+  (setq-local js-indent-level 4)
+  (setq-local typescript-indent-level 4)
+  (setq-local web-mode-markup-indent-offset 4)
+  (setq-local web-mode-css-indent-offset 4)
+  (setq-local web-mode-code-indent-offset 4))
 
-(add-hook 'c-mode-hook #'rc/generate-compile-commands)
-(add-hook 'c++-mode-hook #'rc/generate-compile-commands)
-
-;; Autoformat C/C++ on save
-(defun rc/clang-format-buffer ()
-  "Run clang-format on current buffer if C/C++."
-  (interactive)
-  (when (derived-mode-p 'c-mode 'c++-mode)
-    (clang-format-buffer)))
-(add-hook 'before-save-hook 'rc/clang-format-buffer)
-
-;; Flycheck for real-time diagnostics
-(add-hook 'c-mode-hook 'flycheck-mode)
-(add-hook 'c++-mode-hook 'flycheck-mode)
-
-;; Company completion for C/C++
-(add-hook 'c-mode-hook
-          (lambda ()
-            (setq-local company-backends '(company-capf company-files company-keywords))
-            (company-mode 1)))
-(add-hook 'c++-mode-hook
-          (lambda ()
-            (setq-local company-backends '(company-capf company-files company-keywords))
-            (company-mode 1)))
-
-;; Optional: Corfu inline completion
-(add-hook 'c-mode-hook #'corfu-mode)
-(add-hook 'c++-mode-hook #'corfu-mode)
-
-;; Navigation keys
-(with-eval-after-load 'lsp-mode
-  (define-key lsp-mode-map (kbd "M-.") 'lsp-find-definition)
-  (define-key lsp-mode-map (kbd "M-,") 'lsp-find-references)
-  (define-key lsp-mode-map (kbd "C-c l r") 'lsp-rename)
-  (define-key lsp-mode-map (kbd "C-c l f") 'lsp-format-buffer))
-
-;; Enable line numbers and highlight current line
-(when (version<= "26.0.50" emacs-version)
-  (display-line-numbers-mode 1))
-(global-hl-line-mode 1)
-
-(provide 'cpp-full-features)
+(add-hook 'prog-mode-hook 'rc/setup-prog-indent)
 
 ;;; =============================
 ;;; Org Mode & Productivity Enhancements
 ;;; =============================
 
-;; -----------------------------
-;; Core Org Mode
-;; -----------------------------
 (use-package org
   :ensure t
   :config
-  ;; Visual improvements
   (setq org-fontify-whole-heading-line t
         org-hide-leading-stars t
         org-startup-indented t
@@ -424,16 +423,10 @@
         org-log-done 'time
         org-log-into-drawer t))
 
-;; -----------------------------
-;; Org Bullets
-;; -----------------------------
 (use-package org-bullets
   :ensure t
   :hook (org-mode . org-bullets-mode))
 
-;; -----------------------------
-;; Org Modern: Visual Theme & Icons
-;; -----------------------------
 (use-package org-modern
   :ensure t
   :hook (org-mode . org-modern-mode)
@@ -443,9 +436,6 @@
   (org-modern-block-fringe nil)
   (org-modern-table nil))
 
-;; -----------------------------
-;; Org Agenda & Capture Templates
-;; -----------------------------
 (setq org-agenda-files '("~/org/"))
 (setq org-capture-templates
       '(("t" "Todo" entry (file+headline "~/org/todo.org" "Tasks")
@@ -456,16 +446,10 @@
 (global-set-key (kbd "C-c a") 'org-agenda)
 (global-set-key (kbd "C-c c") 'org-capture)
 
-;; -----------------------------
-;; Org Refiling
-;; -----------------------------
 (setq org-refile-use-outline-path 'file
       org-outline-path-complete-in-steps nil
       org-refile-targets '((org-agenda-files :maxlevel . 3)))
 
-;; -----------------------------
-;; Org-Roam: Knowledge Management
-;; -----------------------------
 (use-package org-roam
   :ensure t
   :init (setq org-roam-v2-ack t)
@@ -475,105 +459,140 @@
          ("C-c n f" . org-roam-node-find)
          ("C-c n i" . org-roam-node-insert))
   :config
-  ;; Ensure the directory exists to prevent startup errors
   (unless (file-exists-p org-roam-directory)
     (make-directory org-roam-directory t))
   (org-roam-db-autosync-mode 1))
-
-(provide 'org-productivity)
-
-;;; =============================
-;;; LSP / Completion / Syntax
-;;; =============================
-
-;; LSP
-(use-package lsp-mode
-  :ensure t
-  :hook ((c-mode c++-mode) . lsp)
-  :commands lsp
-  :config
-  (setq lsp-clients-clangd-executable "/opt/homebrew/opt/llvm/bin/clangd"
-        lsp-enable-snippet nil
-        lsp-prefer-flymake nil))
-
-(use-package lsp-ui
-  :ensure t
-  :commands lsp-ui-mode
-  :config
-  (setq lsp-ui-doc-enable t
-        lsp-ui-doc-position 'at-point
-        lsp-ui-sideline-enable t))
-
-;; Flycheck
-(use-package flycheck
-  :ensure t
-  :init (global-flycheck-mode))
 
 ;;; =============================
 ;;; Custom Features & Extras
 ;;; =============================
 
-;; Global text scale
-(defvar cfg/global-text-scale 0 "Global text scale applied to all buffers.")
-(defun cfg/apply-global-text-scale () (text-scale-set cfg/global-text-scale))
-(add-hook 'buffer-list-update-hook #'cfg/apply-global-text-scale)
-(defun cfg/update-global-text-scale ()
-  (setq cfg/global-text-scale (or text-scale-mode-amount 0)))
-(add-hook 'text-scale-mode-hook #'cfg/update-global-text-scale)
+(use-package pdf-tools
+  :ensure t
+  :config
+  (pdf-tools-install))
 
 (provide 'cfg)
+
+(defun my-term-mode-setup ()
+  (local-set-key (kbd "M-x") 'execute-extended-command))
+(add-hook 'term-mode-hook 'my-term-mode-setup)
+
+;; -------------------------------
+;; Multi-Term Setup
+;; -------------------------------
+
+(require 'package)
+
+;; Add MELPA if not already added
+(unless (assoc "melpa" package-archives)
+  (add-to-list 'package-archives
+               '("melpa" . "https://melpa.org/packages/") t))
+
+;; Refresh package contents if needed
+(unless package-archive-contents
+  (package-refresh-contents))
+
+;; Install multi-term if missing
+(unless (package-installed-p 'multi-term)
+  (package-install 'multi-term))
+
+(require 'multi-term)
+
+;; Optional: default multi-term buffer name
+(setq multi-term-buffer-name "terminal")
+
+;; Optional: keybinding to quickly open multi-term
+(global-set-key (kbd "C-c t") 'multi-term)
+
+;;; =============================
+;;; Independent Font Scaling per Window/Tab
+;;; =============================
+
+;; Remove the global synchronization that caused font sizes to jump
+(remove-hook 'buffer-list-update-hook #'cfg/apply-global-text-scale)
+(remove-hook 'text-scale-mode-hook #'cfg/update-global-text-scale)
+
+;; Simple keybindings for per-window scaling (built-in behavior)
+(global-set-key (kbd "C-x C-+") #'text-scale-increase)
+(global-set-key (kbd "C-x C--") #'text-scale-decrease)
+(global-set-key (kbd "C-x C-0") (lambda () (interactive) (text-scale-set 0)))
+
+;;; =============================
+;;; Minimal C++ Completion with LSP (No Cape) + Brace Formatting
+;;; =============================
+
+;; Corfu for inline completion
+(use-package corfu
+  :ensure t
+  :custom
+  (corfu-cycle t)
+  (corfu-auto t)
+  (corfu-auto-delay 0.1)
+  (corfu-min-width 30)
+  (corfu-echo-delay 0.25)
+  :init
+  (global-corfu-mode))
+
+;; Minimal LSP for C++ (clangd recommended)
+(use-package lsp-mode
+  :ensure t
+  :commands lsp
+  :hook ((c++-mode c-mode) . lsp)
+  :init
+  (setq lsp-enable-snippet nil
+        lsp-prefer-flymake nil
+        lsp-file-watch-threshold 20000
+        lsp-diagnostics-provider :none))
+
+;; LSP UI (optional hover info)
+(use-package lsp-ui
+  :ensure t
+  :commands lsp-ui-mode
+  :init (add-hook 'lsp-mode-hook 'lsp-ui-mode)
+  :config
+  (setq lsp-ui-sideline-enable nil
+        lsp-ui-doc-enable t
+        lsp-ui-doc-position 'at-point))
+
+;; Keybindings for navigation
+(with-eval-after-load 'lsp-mode
+  (define-key lsp-mode-map (kbd "M-.") 'lsp-find-definition)
+  (define-key lsp-mode-map (kbd "M-,") 'lsp-find-references))
+
+;; Set LSP root to Neotree project
+(defun rc/lsp-set-root-to-neotree ()
+  "Set LSP workspace root to the current Neotree project."
+  (when (and (bound-and-true-p neo-global--root-dir)
+             (fboundp 'lsp-workspace-folders-add))
+    (lsp-workspace-folders-add neo-global--root-dir)))
+
+(add-hook 'lsp-mode-hook #'rc/lsp-set-root-to-neotree)
+
+;;; =============================
+;;; Brace formatting for C++
+;;; =============================
+(defun rc/cpp-style ()
+  "Custom C++ coding style with braces on new lines."
+  (c-set-style "stroustrup")        ;; base style similar to VS/Stroustrup
+  (setq c-basic-offset 4            ;; 4 spaces indentation
+        indent-tabs-mode nil)
+  ;; Put braces on their own line
+  (c-set-offset 'substatement-open 0)
+  (c-set-offset 'inline-open 0)
+  (c-set-offset 'brace-list-open 0))
+
+(add-hook 'c++-mode-hook 'rc/cpp-style)
+(add-hook 'c-mode-hook 'rc/cpp-style)
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   '(ag all-the-icons-completion all-the-icons-dired avy base16-theme
-        catppuccin-theme ccls clang-format clojure-mode cmake-mode
-        corfu d-mode dash-functional dockerfile-mode doom-modeline
-        doom-themes elpy glsl-mode go-mode graphviz-dot-mode
-        gruber-darker-theme gruvbox-theme haskell-mode helm-ls-git
-        helm-projectile helm-rg hindent ido-completing-read+
-        jinja2-mode kotlin-mode ligature lsp-ui lua-mode magit
-        modus-themes move-text multiple-cursors nginx-mode nim-mode
-        nix-mode org-bullets org-cliplink org-modern org-roam paredit
-        php-mode powershell proof-general purescript-mode qml-mode
-        racket-mode rfc-mode rust-mode scala-mode smex sml-mode tide
-        toml-mode tuareg typescript-mode uxntal-mode yaml-mode)))
+ )
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
-
-(defun disable-flycheck-for-current-project-once ()
-  "Disable Flycheck automatically for this buffer in the current project.
-Runs only once per buffer to avoid re-enabling issues."
-  (interactive)
-  (when (and (projectile-project-p)
-             (bound-and-true-p flycheck-mode)
-             (not (bound-and-true-p flycheck-disabled-for-project)))
-    ;; Mark this buffer as having Flycheck disabled
-    (setq-local flycheck-disabled-for-project t)
-    ;; Disable automatic checking
-    (setq-local flycheck-check-syntax-automatically nil)
-    ;; Clear any existing overlays
-    (flycheck-clear)
-    (message "Flycheck disabled for this buffer in this project")))
-
-(defun enable-flycheck-for-current-project ()
-  "Re-enable Flycheck for the current buffer."
-  (interactive)
-  (when (projectile-project-p)
-    ;; Re-enable automatic checking
-    (setq-local flycheck-check-syntax-automatically
-                '(save mode-enabled idle-change new-line))
-    (flycheck-buffer)
-    (setq-local flycheck-disabled-for-project nil)
-    (message "Flycheck enabled for this buffer in this project")))
-
-;; Hook the “disable once” function safely
-(add-hook 'prog-mode-hook 'disable-flycheck-for-current-project-once)
-
-
+ '(term-color-black ((t (:background "#2d2d2d" :foreground "#2d2d2d")))))
