@@ -478,6 +478,9 @@
   (local-set-key (kbd "M-x") 'execute-extended-command))
 (add-hook 'term-mode-hook 'my-term-mode-setup)
 
+(global-set-key (kbd "M-3")
+                (lambda () (interactive) (insert "#")))
+
 ;; -------------------------------
 ;; Multi-Term Setup
 ;; -------------------------------
