@@ -481,6 +481,11 @@
 (global-set-key (kbd "M-3")
                 (lambda () (interactive) (insert "#")))
 
+
+(setq gc-cons-threshold 500000000) ; 100MB instead of default ~0.8MB
+(setq gc-cons-percentage 0.6)
+
+
 ;; -------------------------------
 ;; Multi-Term Setup
 ;; -------------------------------
@@ -522,10 +527,12 @@
 (global-set-key (kbd "C-x C-0") (lambda () (interactive) (text-scale-set 0)))
 
 ;;; =============================
-;;; Minimal C++ Completion with LSP (No Cape) + Brace Formatting
+;;; Optimized C++ Dev Config (Corfu + LSP-only Completion)
 ;;; =============================
 
-;; Corfu for inline completion
+;; -----------------------------
+;; Corfu: Completion popup UI
+;; -----------------------------
 (use-package corfu
   :ensure t
   :custom
@@ -537,65 +544,106 @@
   :init
   (global-corfu-mode))
 
-;; Minimal LSP for C++ (clangd recommended)
+;; -----------------------------
+;; LSP (clangd recommended)
+;; -----------------------------
 (use-package lsp-mode
   :ensure t
   :commands lsp
   :hook ((c++-mode c-mode) . lsp)
   :init
+
   (setq lsp-enable-snippet nil
         lsp-prefer-flymake nil
-        lsp-file-watch-threshold 20000
-        lsp-diagnostics-provider :none))
+        lsp-file-watch-threshold 5000
+        lsp-enable-file-watchers nil
+        lsp-diagnostics-provider :none
+        lsp-idle-delay 0.5
+        lsp-prefer-capf t)
+  :config
+  ;; Prefer Homebrew clangd if available
+  (setq lsp-clients-clangd-executable
+        (or (executable-find "/opt/homebrew/opt/llvm/bin/clangd")
+            (executable-find "/usr/local/opt/llvm/bin/clangd")
+            (executable-find "/usr/bin/clangd")
+            (executable-find "clangd"))))
 
-;; LSP UI (optional hover info)
+;; -----------------------------
+;; LSP UI (hover, peek, references)
+;; -----------------------------
 (use-package lsp-ui
   :ensure t
   :commands lsp-ui-mode
-  :init (add-hook 'lsp-mode-hook 'lsp-ui-mode)
+  :init
+  (add-hook 'lsp-mode-hook 'lsp-ui-mode)
   :config
+  ;; Keep lightweight: disable docs/sideline spam
   (setq lsp-ui-sideline-enable nil
-        lsp-ui-doc-enable t
-        lsp-ui-doc-position 'at-point))
+        lsp-ui-doc-enable nil))
 
 ;; Keybindings for navigation
 (with-eval-after-load 'lsp-mode
   (define-key lsp-mode-map (kbd "M-.") 'lsp-find-definition)
-  (define-key lsp-mode-map (kbd "M-,") 'lsp-find-references))
+  (define-key lsp-mode-map (kbd "M-,") 'lsp-find-references)
+  (global-set-key (kbd "M-[") 'xref-go-back)
+  (global-set-key (kbd "M-]") 'xref-go-forward))
 
-;; Set LSP root to Neotree project
-(defun rc/lsp-set-root-to-neotree ()
-  "Set LSP workspace root to the current Neotree project."
-  (when (and (bound-and-true-p neo-global--root-dir)
-             (fboundp 'lsp-workspace-folders-add))
-    (lsp-workspace-folders-add neo-global--root-dir)))
 
-(add-hook 'lsp-mode-hook #'rc/lsp-set-root-to-neotree)
-
-;;; =============================
-;;; Brace formatting for C++
-;;; =============================
+;; -----------------------------
+;; C++ Style (braces on new line)
+;; -----------------------------
 (defun rc/cpp-style ()
   "Custom C++ coding style with braces on new lines."
-  (c-set-style "stroustrup")        ;; base style similar to VS/Stroustrup
-  (setq c-basic-offset 4            ;; 4 spaces indentation
+  (c-set-style "stroustrup")
+  (setq c-basic-offset 4
         indent-tabs-mode nil)
-  ;; Put braces on their own line
   (c-set-offset 'substatement-open 0)
   (c-set-offset 'inline-open 0)
   (c-set-offset 'brace-list-open 0))
-
 (add-hook 'c++-mode-hook 'rc/cpp-style)
 (add-hook 'c-mode-hook 'rc/cpp-style)
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(term-color-black ((t (:background "#2d2d2d" :foreground "#2d2d2d")))))
+
+;; -----------------------------
+;; CMake support
+;; -----------------------------
+(use-package cmake-font-lock
+  :ensure t
+  :hook (cmake-mode . cmake-font-lock-activate))
+
+;; -----------------------------
+;; clang-format (manual trigger)
+;; -----------------------------
+(use-package clang-format
+  :ensure t
+  :bind (:map c++-mode-map
+              ("C-c f" . clang-format-region)))
+
+;;; =============================
+;;; LSP Safety & CPU-friendly Settings
+;;; =============================
+
+(setq lsp-enable-file-watchers nil)
+(setq lsp-auto-guess-root t)
+(setq lsp-trace nil)
+(setq lsp-enable-on-type-formatting nil)
+(setq lsp-idle-delay 1.0)
+
+(use-package lsp-ui
+  :ensure t
+  :commands lsp-ui-mode
+  :init
+  (add-hook 'lsp-mode-hook 'lsp-ui-mode)
+  :config
+  (setq lsp-ui-sideline-enable nil
+        lsp-ui-doc-enable nil))
+
+(with-eval-after-load 'company
+  (setq company-global-modes '())
+  (global-company-mode -1)
+  (fmakunbound 'company-mode)
+  (setq company-mode nil)
+  (setq company-backends nil))
+
+;; Prevent any function from activating company-mode
+(advice-add 'company-mode :override #'ignore)
+
